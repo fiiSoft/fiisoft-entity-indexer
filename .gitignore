@@ -1,0 +1,7 @@
+/.idea/
+/vendor/
+/var/coverage
+/.settings
+/.buildpath
+/.project
+/src/EntityMap/DevEntityMap.php
