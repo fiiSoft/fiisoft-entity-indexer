@@ -4,7 +4,7 @@ namespace FiiSoft\EntityIndexer\MapStats;
 
 use Closure;
 
-final class MultiEntityMapStatsView implements EntityMapStatsView
+final class MultiEntityMapStatsView extends BaseEntityMapStatsView
 {
     /** @var MultiEntityMapStatsView */
     private static $instance;

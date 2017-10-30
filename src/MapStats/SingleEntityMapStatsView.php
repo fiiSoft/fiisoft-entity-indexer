@@ -2,7 +2,7 @@
 
 namespace FiiSoft\EntityIndexer\MapStats;
 
-final class SingleEntityMapStatsView implements EntityMapStatsView
+final class SingleEntityMapStatsView extends BaseEntityMapStatsView
 {
     /** @var EntityMapStats */
     private $stats;

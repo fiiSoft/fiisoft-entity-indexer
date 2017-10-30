@@ -12,6 +12,11 @@ interface EntityMapStatsView
     public function clear();
     
     /**
+     * @return array array with all stats as keys and counts as values
+     */
+    public function toArray();
+    
+    /**
      * @return int
      */
     public function foundByKeyTotal();

@@ -83,13 +83,18 @@ final class EntityMapWithStats implements EntityMap
     /**
      * @param array $indexBy
      * @param KeyMaker|null $keyMaker
+     * @param EntityMapStats|null $stats
      * @param string|null $name
      * @throws InvalidArgumentException
      */
-    public function __construct(array $indexBy = [], KeyMaker $keyMaker = null, $name = null)
-    {
+    public function __construct(
+        array $indexBy = [],
+        KeyMaker $keyMaker = null,
+        EntityMapStats $stats = null,
+        $name = null
+    ){
         $this->name = (string) $name;
-        $this->stats = new EntityMapStats();
+        $this->stats = $stats ?: new EntityMapStats();
         $this->keyMaker = $keyMaker ?: new DefaultKeyMaker();
         
         $this->setIndexes($indexBy);
