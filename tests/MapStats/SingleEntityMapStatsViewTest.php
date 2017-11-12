@@ -30,7 +30,5 @@ class SingleEntityMapStatsViewTest extends \PHPUnit_Framework_TestCase
         
         self::assertArrayNotHasKey('clear', $actual);
         self::assertArrayNotHasKey('toArray', $actual);
-        
-        echo print_r($actual, true);
     }
 }
