@@ -275,67 +275,85 @@ final class EntityMapWithoutStats implements EntityMap
         $this->entities[$key] = $entity;
         
         foreach ($this->indexByUniqueOne as $index => $prop) {
-            $uKey = $this->keyMaker->makeKey($entity->get($prop));
-            
-            if (isset($this->uniqueOne[$index][$uKey]) && $this->uniqueOne[$index][$uKey] !== $key) {
-                throw new RuntimeException(
-                    'Violation of uniqueness ('.$index.')=('.$uKey.') in EntityMap '.$this->name
-                );
+            $value = $entity->get($prop);
+            if ($value !== null) {
+                $uKey = $this->keyMaker->makeKey($value);
+                
+                if (isset($this->uniqueOne[$index][$uKey]) && $this->uniqueOne[$index][$uKey] !== $key) {
+                    throw new RuntimeException(
+                        'Violation of uniqueness ('.$index.')=('.$uKey.') in EntityMap '.$this->name
+                    );
+                }
+                
+                $this->uniqueOne[$index][$uKey] = $key;
             }
-            
-            $this->uniqueOne[$index][$uKey] = $key;
         }
         
         foreach ($this->indexByUniqueTwo as $index => $props) {
             $uKey = $this->makeKeyFromEntity($entity, $props);
-            
-            if (isset($this->uniqueTwo[$index][$uKey]) && $this->uniqueTwo[$index][$uKey] !== $key) {
-                throw new RuntimeException(
-                    'Violation of uniqueness ('.$index.')=('.$uKey.') in EntityMap '.$this->name
-                );
+            if ($uKey !== null) {
+                if (isset($this->uniqueTwo[$index][$uKey]) && $this->uniqueTwo[$index][$uKey] !== $key) {
+                    throw new RuntimeException(
+                        'Violation of uniqueness ('.$index.')=('.$uKey.') in EntityMap '.$this->name
+                    );
+                }
+                
+                $this->uniqueTwo[$index][$uKey] = $key;
             }
-            
-            $this->uniqueTwo[$index][$uKey] = $key;
         }
         
         foreach ($this->indexByUniqueThree as $index => $props) {
             $uKey = $this->makeKeyFromEntity($entity, $props);
-            
-            if (isset($this->uniqueThree[$index][$uKey]) && $this->uniqueThree[$index][$uKey] !== $key) {
-                throw new RuntimeException(
-                    'Violation of uniqueness ('.$index.')=('.$uKey.') in EntityMap '.$this->name
-                );
+            if ($uKey !== null) {
+                if (isset($this->uniqueThree[$index][$uKey]) && $this->uniqueThree[$index][$uKey] !== $key) {
+                    throw new RuntimeException(
+                        'Violation of uniqueness ('.$index.')=('.$uKey.') in EntityMap '.$this->name
+                    );
+                }
+                
+                $this->uniqueThree[$index][$uKey] = $key;
             }
-            
-            $this->uniqueThree[$index][$uKey] = $key;
         }
         
         foreach ($this->indexByUniqueFour as $index => $props) {
             $uKey = $this->makeKeyFromEntity($entity, $props);
-            
-            if (isset($this->uniqueFour[$index][$uKey]) && $this->uniqueFour[$index][$uKey] !== $key) {
-                throw new RuntimeException(
-                    'Violation of uniqueness ('.$index.')=('.$uKey.') in EntityMap '.$this->name
-                );
+            if ($uKey !== null) {
+                if (isset($this->uniqueFour[$index][$uKey]) && $this->uniqueFour[$index][$uKey] !== $key) {
+                    throw new RuntimeException(
+                        'Violation of uniqueness ('.$index.')=('.$uKey.') in EntityMap '.$this->name
+                    );
+                }
+                
+                $this->uniqueFour[$index][$uKey] = $key;
             }
-            
-            $this->uniqueFour[$index][$uKey] = $key;
         }
         
         foreach ($this->indexByMultiOne as $index => $prop) {
-            $this->multipleOne[$index][$this->keyMaker->makeKey($entity->get($prop))][] = $key;
+            $value = $entity->get($prop);
+            if ($value !== null) {
+                $this->multipleOne[$index][$this->keyMaker->makeKey($value)][] = $key;
+            }
         }
         
         foreach ($this->indexByMultiTwo as $index => $props) {
-            $this->multipleTwo[$index][$this->makeKeyFromEntity($entity, $props)][] = $key;
+            $uKey = $this->makeKeyFromEntity($entity, $props);
+            if ($uKey !== null) {
+                $this->multipleTwo[$index][$uKey][] = $key;
+            }
         }
         
         foreach ($this->indexByMultiThree as $index => $props) {
-            $this->multipleThree[$index][$this->makeKeyFromEntity($entity, $props)][] = $key;
+            $uKey = $this->makeKeyFromEntity($entity, $props);
+            if ($uKey !== null) {
+                $this->multipleThree[$index][$uKey][] = $key;
+            }
         }
         
         foreach ($this->indexByMultiFour as $index => $props) {
-            $this->multipleFour[$index][$this->makeKeyFromEntity($entity, $props)][] = $key;
+            $uKey = $this->makeKeyFromEntity($entity, $props);
+            if ($uKey !== null) {
+                $this->multipleFour[$index][$uKey][] = $key;
+            }
         }
         
         return $entity;
@@ -361,6 +379,10 @@ final class EntityMapWithoutStats implements EntityMap
             $isStrict = true;
             
             foreach ($conditions as $index => $value) {
+                if ($value === null) {
+                    continue;
+                }
+                
                 $key = $this->keyMaker->makeKey($value);
                 if (isset($this->uniqueOne[$index][$key])) {
                     $candidates[$this->uniqueOne[$index][$key]] = true;
@@ -394,7 +416,7 @@ final class EntityMapWithoutStats implements EntityMap
         if (!empty($this->uniqueTwo) && $cnt > 1) {
             
             foreach ($this->indexByUniqueTwo as $index => list($p1, $p2)) {
-                if (array_key_exists($p1, $conditions) && array_key_exists($p2, $conditions)) {
+                if (isset($conditions[$p1], $conditions[$p2])) {
                     $key = $this->keyMaker->makeKey($conditions[$p1])
                         .','.$this->keyMaker->makeKey($conditions[$p2]);
                 } else {
@@ -429,10 +451,7 @@ final class EntityMapWithoutStats implements EntityMap
         if (!empty($this->uniqueThree) && $cnt > 2) {
             
             foreach ($this->indexByUniqueThree as $index => list($p1, $p2, $p3)) {
-                if (array_key_exists($p1, $conditions)
-                    && array_key_exists($p2, $conditions)
-                    && array_key_exists($p3, $conditions)
-                ) {
+                if (isset($conditions[$p1], $conditions[$p2], $conditions[$p3])) {
                     $key = $this->keyMaker->makeKey($conditions[$p1])
                         .','.$this->keyMaker->makeKey($conditions[$p2])
                         .','.$this->keyMaker->makeKey($conditions[$p3]);
@@ -468,11 +487,7 @@ final class EntityMapWithoutStats implements EntityMap
         if (!empty($this->uniqueFour) && $cnt > 3) {
             
             foreach ($this->indexByUniqueFour as $index => list($p1, $p2, $p3, $p4)) {
-                if (array_key_exists($p1, $conditions)
-                    && array_key_exists($p2, $conditions)
-                    && array_key_exists($p3, $conditions)
-                    && array_key_exists($p4, $conditions)
-                ) {
+                if (isset($conditions[$p1], $conditions[$p2], $conditions[$p3], $conditions[$p4])) {
                     $key = $this->keyMaker->makeKey($conditions[$p1])
                         .','.$this->keyMaker->makeKey($conditions[$p2])
                         .','.$this->keyMaker->makeKey($conditions[$p3])
@@ -515,11 +530,7 @@ final class EntityMapWithoutStats implements EntityMap
                 if (!empty($this->multipleFour)) {
                     
                     foreach ($this->indexByMultiFour as $index => list($p1, $p2, $p3, $p4)) {
-                        if (array_key_exists($p1, $conditions)
-                            && array_key_exists($p2, $conditions)
-                            && array_key_exists($p3, $conditions)
-                            && array_key_exists($p4, $conditions)
-                        ) {
+                        if (isset($conditions[$p1], $conditions[$p2], $conditions[$p3], $conditions[$p4])) {
                             $key = $this->keyMaker->makeKey($conditions[$p1])
                                 .','.$this->keyMaker->makeKey($conditions[$p2])
                                 .','.$this->keyMaker->makeKey($conditions[$p3])
@@ -544,10 +555,7 @@ final class EntityMapWithoutStats implements EntityMap
                 if (!empty($this->multipleThree)) {
                     
                     foreach ($this->indexByMultiThree as $index => list($p1, $p2, $p3)) {
-                        if (array_key_exists($p1, $conditions)
-                            && array_key_exists($p2, $conditions)
-                            && array_key_exists($p3, $conditions)
-                        ) {
+                        if (isset($conditions[$p1], $conditions[$p2], $conditions[$p3])) {
                             $key = $this->keyMaker->makeKey($conditions[$p1])
                                 .','.$this->keyMaker->makeKey($conditions[$p2])
                                 .','.$this->keyMaker->makeKey($conditions[$p3]);
@@ -571,7 +579,7 @@ final class EntityMapWithoutStats implements EntityMap
                 if (!empty($this->multipleTwo)) {
                     
                     foreach ($this->indexByMultiTwo as $index => list($p1, $p2)) {
-                        if (array_key_exists($p1, $conditions) && array_key_exists($p2, $conditions)) {
+                        if (isset($conditions[$p1], $conditions[$p2])) {
                             $key = $this->keyMaker->makeKey($conditions[$p1])
                                 .','.$this->keyMaker->makeKey($conditions[$p2]);
                         } else {
@@ -594,7 +602,7 @@ final class EntityMapWithoutStats implements EntityMap
                 if (!empty($this->multipleOne)) {
                     
                     foreach ($this->indexByMultiOne as $index) {
-                        if (array_key_exists($index, $conditions)) {
+                        if (isset($conditions[$index])) {
                             $key = $this->keyMaker->makeKey($conditions[$index]);
                         } else {
                             continue;
@@ -668,6 +676,10 @@ final class EntityMapWithoutStats implements EntityMap
             $isStrict = true;
             
             foreach ($conditions as $index => $value) {
+                if ($value === null) {
+                    continue;
+                }
+                
                 $key = $this->keyMaker->makeKey($value);
                 if (isset($this->uniqueOne[$index][$key])) {
                     $candidates[$this->uniqueOne[$index][$key]] = true;
@@ -701,7 +713,7 @@ final class EntityMapWithoutStats implements EntityMap
         if (!empty($this->uniqueTwo) && $cnt > 1) {
             
             foreach ($this->indexByUniqueTwo as $index => list($p1, $p2)) {
-                if (array_key_exists($p1, $conditions) && array_key_exists($p2, $conditions)) {
+                if (isset($conditions[$p1], $conditions[$p2])) {
                     $key = $this->keyMaker->makeKey($conditions[$p1])
                         .','.$this->keyMaker->makeKey($conditions[$p2]);
                 } else {
@@ -736,10 +748,7 @@ final class EntityMapWithoutStats implements EntityMap
         if (!empty($this->uniqueThree) && $cnt > 2) {
             
             foreach ($this->indexByUniqueThree as $index => list($p1, $p2, $p3)) {
-                if (array_key_exists($p1, $conditions)
-                    && array_key_exists($p2, $conditions)
-                    && array_key_exists($p3, $conditions)
-                ) {
+                if (isset($conditions[$p1], $conditions[$p2], $conditions[$p3])) {
                     $key = $this->keyMaker->makeKey($conditions[$p1])
                         .','.$this->keyMaker->makeKey($conditions[$p2])
                         .','.$this->keyMaker->makeKey($conditions[$p3]);
@@ -775,11 +784,7 @@ final class EntityMapWithoutStats implements EntityMap
         if (!empty($this->uniqueFour) && $cnt > 3) {
             
             foreach ($this->indexByUniqueFour as $index => list($p1, $p2, $p3, $p4)) {
-                if (array_key_exists($p1, $conditions)
-                    && array_key_exists($p2, $conditions)
-                    && array_key_exists($p3, $conditions)
-                    && array_key_exists($p4, $conditions)
-                ) {
+                if (isset($conditions[$p1], $conditions[$p2], $conditions[$p3], $conditions[$p4])) {
                     $key = $this->keyMaker->makeKey($conditions[$p1])
                         .','.$this->keyMaker->makeKey($conditions[$p2])
                         .','.$this->keyMaker->makeKey($conditions[$p3])
@@ -822,11 +827,7 @@ final class EntityMapWithoutStats implements EntityMap
                 if (!empty($this->multipleFour)) {
                     
                     foreach ($this->indexByMultiFour as $index => list($p1, $p2, $p3, $p4)) {
-                        if (array_key_exists($p1, $conditions)
-                            && array_key_exists($p2, $conditions)
-                            && array_key_exists($p3, $conditions)
-                            && array_key_exists($p4, $conditions)
-                        ) {
+                        if (isset($conditions[$p1], $conditions[$p2], $conditions[$p3], $conditions[$p4])) {
                             $key = $this->keyMaker->makeKey($conditions[$p1])
                                 .','.$this->keyMaker->makeKey($conditions[$p2])
                                 .','.$this->keyMaker->makeKey($conditions[$p3])
@@ -851,10 +852,7 @@ final class EntityMapWithoutStats implements EntityMap
                 if (!empty($this->multipleThree)) {
                     
                     foreach ($this->indexByMultiThree as $index => list($p1, $p2, $p3)) {
-                        if (array_key_exists($p1, $conditions)
-                            && array_key_exists($p2, $conditions)
-                            && array_key_exists($p3, $conditions)
-                        ) {
+                        if (isset($conditions[$p1], $conditions[$p2], $conditions[$p3])) {
                             $key = $this->keyMaker->makeKey($conditions[$p1])
                                 .','.$this->keyMaker->makeKey($conditions[$p2])
                                 .','.$this->keyMaker->makeKey($conditions[$p3]);
@@ -878,7 +876,7 @@ final class EntityMapWithoutStats implements EntityMap
                 if (!empty($this->multipleTwo)) {
                     
                     foreach ($this->indexByMultiTwo as $index => list($p1, $p2)) {
-                        if (array_key_exists($p1, $conditions) && array_key_exists($p2, $conditions)) {
+                        if (isset($conditions[$p1], $conditions[$p2])) {
                             $key = $this->keyMaker->makeKey($conditions[$p1])
                                 .','.$this->keyMaker->makeKey($conditions[$p2]);
                         } else {
@@ -901,7 +899,7 @@ final class EntityMapWithoutStats implements EntityMap
                 if (!empty($this->multipleOne)) {
                     
                     foreach ($this->indexByMultiOne as $index) {
-                        if (array_key_exists($index, $conditions)) {
+                        if (isset($conditions[$index])) {
                             $key = $this->keyMaker->makeKey($conditions[$index]);
                         } else {
                             continue;
@@ -1055,13 +1053,21 @@ final class EntityMapWithoutStats implements EntityMap
     /**
      * @param IndexableEntity $entity
      * @param array $props
-     * @throws \InvalidArgumentException
-     * @return string
+     * @return string|null
      */
     private function makeKeyFromEntity(IndexableEntity $entity, array $props)
     {
-        return implode(',', array_map(function ($prop) use ($entity) {
-            return $this->keyMaker->makeKey($entity->get($prop));
-        }, $props));
+        $pieces = [];
+    
+        foreach ($props as $prop) {
+            $value = $entity->get($prop);
+            if ($value === null) {
+                return null;
+            }
+            
+            $pieces[] = $this->keyMaker->makeKey($value);
+        }
+        
+        return implode(',', $pieces);
     }
 }
