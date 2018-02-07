@@ -2,6 +2,10 @@
 
 All important changes to `fiisoft-entity-indexer` will be documented in this file
 
+## 1.2.0
+
+Improved search for entities with null values in indexed properties.
+
 ## 1.1.0
 
 Important change - now entities can be indexed by values that can be null.

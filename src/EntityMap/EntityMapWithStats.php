@@ -42,6 +42,9 @@ final class EntityMapWithStats implements EntityMap
     private $uniqueFour = [];
     
     /** @var array */
+    private $nullIndex = [];
+    
+    /** @var array */
     private $indexByUniqueOne = [];
     
     /** @var array */
@@ -79,6 +82,15 @@ final class EntityMapWithStats implements EntityMap
     
     /** @var EntityMapStatsView */
     private $statsView;
+    
+    /** @var string|int */
+    private $key;
+    
+    /** @var IndexableEntity */
+    private $entity;
+    
+    /** @var bool */
+    private $isNull = false;
     
     /**
      * @param array $indexBy
@@ -209,6 +221,7 @@ final class EntityMapWithStats implements EntityMap
         $this->multipleTwo = [];
         $this->multipleThree = [];
         $this->multipleFour = [];
+        $this->nullIndex = [];
     }
     
     /**
@@ -274,96 +287,100 @@ final class EntityMapWithStats implements EntityMap
             if (null === $key) {
                 throw new RuntimeException('Entity has no ID and no param key has been provided');
             }
-            $key = $this->keyMaker->makeKey($key->value());
+            $this->key = $this->keyMaker->makeKey($key->value());
         } else {
-            $key = $this->keyMaker->makeKey($key);
+            $this->key = $this->keyMaker->makeKey($key);
         }
         
-        if (isset($this->entities[$key]) && $entity !== $this->entities[$key]) {
-            throw new RuntimeException('Violation of uniqueness (key '.$key.') in EntityMap '.$this->name);
+        if (isset($this->entities[$this->key]) && $entity !== $this->entities[$this->key]) {
+            throw new RuntimeException('Violation of uniqueness (key '.$this->key.') in EntityMap '.$this->name);
         }
         
-        $this->entities[$key] = $entity;
+        $this->entities[$this->key] = $this->entity = $entity;
         
         foreach ($this->indexByUniqueOne as $index => $prop) {
             $value = $entity->get($prop);
             if ($value !== null) {
                 $uKey = $this->keyMaker->makeKey($value);
                 
-                if (isset($this->uniqueOne[$index][$uKey]) && $this->uniqueOne[$index][$uKey] !== $key) {
+                if (isset($this->uniqueOne[$index][$uKey]) && $this->uniqueOne[$index][$uKey] !== $this->key) {
                     throw new RuntimeException(
                         'Violation of uniqueness ('.$index.')=('.$uKey.') in EntityMap '.$this->name
                     );
                 }
                 
-                $this->uniqueOne[$index][$uKey] = $key;
+                $this->uniqueOne[$index][$uKey] = $this->key;
+            } else {
+                $this->nullIndex[$prop][$this->key] = $this->key;
             }
         }
         
         foreach ($this->indexByUniqueTwo as $index => $props) {
-            $uKey = $this->makeKeyFromEntity($entity, $props);
+            $uKey = $this->makeKeyFromEntity($props);
             if ($uKey !== null) {
-                if (isset($this->uniqueTwo[$index][$uKey]) && $this->uniqueTwo[$index][$uKey] !== $key) {
+                if (isset($this->uniqueTwo[$index][$uKey]) && $this->uniqueTwo[$index][$uKey] !== $this->key) {
                     throw new RuntimeException(
                         'Violation of uniqueness ('.$index.')=('.$uKey.') in EntityMap '.$this->name
                     );
                 }
                 
-                $this->uniqueTwo[$index][$uKey] = $key;
+                $this->uniqueTwo[$index][$uKey] = $this->key;
             }
         }
         
         foreach ($this->indexByUniqueThree as $index => $props) {
-            $uKey = $this->makeKeyFromEntity($entity, $props);
+            $uKey = $this->makeKeyFromEntity($props);
             if ($uKey !== null) {
-                if (isset($this->uniqueThree[$index][$uKey]) && $this->uniqueThree[$index][$uKey] !== $key) {
+                if (isset($this->uniqueThree[$index][$uKey]) && $this->uniqueThree[$index][$uKey] !== $this->key) {
                     throw new RuntimeException(
                         'Violation of uniqueness ('.$index.')=('.$uKey.') in EntityMap '.$this->name
                     );
                 }
                 
-                $this->uniqueThree[$index][$uKey] = $key;
+                $this->uniqueThree[$index][$uKey] = $this->key;
             }
         }
         
         foreach ($this->indexByUniqueFour as $index => $props) {
-            $uKey = $this->makeKeyFromEntity($entity, $props);
+            $uKey = $this->makeKeyFromEntity($props);
             if ($uKey !== null) {
-                if (isset($this->uniqueFour[$index][$uKey]) && $this->uniqueFour[$index][$uKey] !== $key) {
+                if (isset($this->uniqueFour[$index][$uKey]) && $this->uniqueFour[$index][$uKey] !== $this->key) {
                     throw new RuntimeException(
                         'Violation of uniqueness ('.$index.')=('.$uKey.') in EntityMap '.$this->name
                     );
                 }
                 
-                $this->uniqueFour[$index][$uKey] = $key;
+                $this->uniqueFour[$index][$uKey] = $this->key;
             }
         }
         
         foreach ($this->indexByMultiOne as $index => $prop) {
             $value = $entity->get($prop);
             if ($value !== null) {
-                $this->multipleOne[$index][$this->keyMaker->makeKey($value)][] = $key;
+                $this->multipleOne[$index][$this->keyMaker->makeKey($value)][] = $this->key;
+            } else {
+                $this->nullIndex[$prop][$this->key] = $this->key;
             }
         }
         
         foreach ($this->indexByMultiTwo as $index => $props) {
-            $uKey = $this->makeKeyFromEntity($entity, $props);
+            $uKey = $this->makeKeyFromEntity($props);
             if ($uKey !== null) {
-                $this->multipleTwo[$index][$uKey][] = $key;
+                $this->multipleTwo[$index][$uKey][] = $this->key;
             }
         }
         
         foreach ($this->indexByMultiThree as $index => $props) {
-            $uKey = $this->makeKeyFromEntity($entity, $props);
+            $uKey = $this->makeKeyFromEntity($props);
             if ($uKey !== null) {
-                $this->multipleThree[$index][$uKey][] = $key;
+                $this->multipleThree[$index][$uKey][] = $this->key;
             }
         }
         
         foreach ($this->indexByMultiFour as $index => $props) {
-            $uKey = $this->makeKeyFromEntity($entity, $props);
+            $uKey = $this->makeKeyFromEntity($props);
             if ($uKey !== null) {
-                $this->multipleFour[$index][$uKey][] = $key;
+                $this->multipleFour[$index][$uKey][] = $this->key;
             }
         }
 
@@ -676,6 +693,17 @@ final class EntityMapWithStats implements EntityMap
                         }
                     }
                 }
+        }
+    
+        if (empty($candidates)) {
+            foreach ($conditions as $index => $value) {
+                if ($value === null && !empty($this->nullIndex[$index])) {
+                    $candidates[] = $this->nullIndex[$index];
+                    unset($conditions[$index]);
+                }
+            }
+    
+            $isStrict = empty($conditions);
         }
         
         if (empty($candidates)) {
@@ -1026,6 +1054,17 @@ final class EntityMapWithStats implements EntityMap
                     }
                 }
         }
+    
+        if (empty($candidates)) {
+            foreach ($conditions as $index => $value) {
+                if ($value === null && !empty($this->nullIndex[$index])) {
+                    $candidates[] = $this->nullIndex[$index];
+                    unset($conditions[$index]);
+                }
+            }
+        
+            $isStrict = empty($conditions);
+        }
         
         if (empty($candidates)) {
             $entities = [];
@@ -1099,90 +1138,128 @@ final class EntityMapWithStats implements EntityMap
             if (null === $key) {
                 return;
             }
-            $key = $this->keyMaker->makeKey($key->value());
+            $this->key = $this->keyMaker->makeKey($key->value());
         } else {
-            $key = $this->keyMaker->makeKey($key);
+            $this->key = $this->keyMaker->makeKey($key);
         }
         
-        if (isset($this->entities[$key])) {
-            unset($this->entities[$key]);
+        $this->entity = $entity;
+        
+        if (isset($this->entities[$this->key])) {
+            unset($this->entities[$this->key]);
         }
+        
+        //TODO searching indexes to remove should be done with help of key, not actual properties of entity
         
         foreach ($this->indexByUniqueOne as $index => $prop) {
-            unset($this->uniqueOne[$index][$this->keyMaker->makeKey($entity->get($prop))]);
+            $value = $entity->get($prop);
+            if ($value !== null) {
+                unset($this->uniqueOne[$index][$this->keyMaker->makeKey($value)]);
+            } else {
+                unset($this->nullIndex[$prop][$this->key]);
+            }
         }
         
         foreach ($this->indexByUniqueTwo as $index => $props) {
-            unset($this->uniqueTwo[$index][$this->makeKeyFromEntity($entity, $props)]);
+            $mKey = $this->makeKeyFromEntity($props, true);
+            if ($mKey !== null) {
+                unset($this->uniqueTwo[$index][$mKey]);
+            }
         }
         
         foreach ($this->indexByUniqueThree as $index => $props) {
-            unset($this->uniqueThree[$index][$this->makeKeyFromEntity($entity, $props)]);
+            $mKey = $this->makeKeyFromEntity($props, true);
+            if ($mKey !== null) {
+                unset($this->uniqueThree[$index][$mKey]);
+            }
         }
         
         foreach ($this->indexByUniqueFour as $index => $props) {
-            unset($this->uniqueFour[$index][$this->makeKeyFromEntity($entity, $props)]);
+            $mKey = $this->makeKeyFromEntity($props, true);
+            if ($mKey !== null) {
+                unset($this->uniqueFour[$index][$mKey]);
+            }
         }
         
         foreach ($this->indexByMultiOne as $index => $prop) {
-            $mKey = $this->keyMaker->makeKey($entity->get($prop));
-            foreach ($this->multipleOne[$index][$mKey] as $i => $iKey) {
-                if ($iKey === $key) {
-                    unset($this->multipleOne[$index][$mKey][$i]);
-                    break;
+            $value = $entity->get($prop);
+            if ($value !== null) {
+                $mKey = $this->keyMaker->makeKey($value);
+                foreach ($this->multipleOne[$index][$mKey] as $i => $iKey) {
+                    if ($iKey === $this->key) {
+                        unset($this->multipleOne[$index][$mKey][$i]);
+                        break;
+                    }
                 }
+            } else {
+                unset($this->nullIndex[$prop][$this->key]);
             }
         }
         
         foreach ($this->indexByMultiTwo as $index => $props) {
-            $mKey = $this->makeKeyFromEntity($entity, $props);
-            foreach ($this->multipleTwo[$index][$mKey] as $i => $iKey) {
-                if ($iKey === $key) {
-                    unset($this->multipleTwo[$index][$mKey][$i]);
-                    break;
+            $mKey = $this->makeKeyFromEntity($props, true);
+            if ($mKey !== null) {
+                foreach ($this->multipleTwo[$index][$mKey] as $i => $iKey) {
+                    if ($iKey === $this->key) {
+                        unset($this->multipleTwo[$index][$mKey][$i]);
+                        break;
+                    }
                 }
             }
         }
         
         foreach ($this->indexByMultiThree as $index => $props) {
-            $mKey = $this->makeKeyFromEntity($entity, $props);
-            foreach ($this->multipleThree[$index][$mKey] as $i => $iKey) {
-                if ($iKey === $key) {
-                    unset($this->multipleThree[$index][$mKey][$i]);
-                    break;
+            $mKey = $this->makeKeyFromEntity($props, true);
+            if ($mKey !== null) {
+                foreach ($this->multipleThree[$index][$mKey] as $i => $iKey) {
+                    if ($iKey === $this->key) {
+                        unset($this->multipleThree[$index][$mKey][$i]);
+                        break;
+                    }
                 }
             }
         }
         
         foreach ($this->indexByMultiFour as $index => $props) {
-            $mKey = $this->makeKeyFromEntity($entity, $props);
-            foreach ($this->multipleFour[$index][$mKey] as $i => $iKey) {
-                if ($iKey === $i) {
-                    unset($this->multipleFour[$index][$mKey][$i]);
-                    break;
+            $mKey = $this->makeKeyFromEntity($props, true);
+            if ($mKey !== null) {
+                foreach ($this->multipleFour[$index][$mKey] as $i => $iKey) {
+                    if ($iKey === $this->key) {
+                        unset($this->multipleFour[$index][$mKey][$i]);
+                        break;
+                    }
                 }
             }
         }
     }
     
     /**
-     * @param IndexableEntity $entity
      * @param array $props
+     * @param bool $remove
      * @return string|null
      */
-    private function makeKeyFromEntity(IndexableEntity $entity, array $props)
+    private function makeKeyFromEntity(array $props, $remove = false)
     {
         $pieces = [];
+        $this->isNull = false;
     
         foreach ($props as $prop) {
-            $value = $entity->get($prop);
-            if ($value === null) {
-                return null;
-            }
+            $value = $this->entity->get($prop);
             
-            $pieces[] = $this->keyMaker->makeKey($value);
+            if ($value === null) {
+                $this->isNull = true;
+                if ($remove) {
+                    unset($this->nullIndex[$prop][$this->key]);
+                } else {
+                    $this->nullIndex[$prop][$this->key] = $this->key;
+                }
+            }
+    
+            if (!$this->isNull) {
+                $pieces[] = $this->keyMaker->makeKey($value);
+            }
         }
-        
-        return implode(',', $pieces);
+    
+        return $this->isNull ? null : implode(',', $pieces);
     }
 }
