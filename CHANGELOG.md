@@ -2,6 +2,11 @@
 
 All important changes to `fiisoft-entity-indexer` will be documented in this file
 
+## 1.3.0
+
+Changed way how multiple indexes store keys and significantly changed parts of code
+responsible for fetching keys from null indexes.
+
 ## 1.2.0
 
 Improved search for entities with null values in indexed properties.

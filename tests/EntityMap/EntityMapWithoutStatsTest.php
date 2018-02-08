@@ -58,6 +58,9 @@ class EntityMapWithoutStatsTest extends \PHPUnit_Framework_TestCase
         $findOneWithNameNullAndSymbolZ = $map->findOneEntity(['name' => null, 'symbol' => 'z']);
         self::assertSame($entityThree, $findOneWithNameNullAndSymbolZ);
         
+        $findOneWithNameNullAndSymbolNull = $map->findOneEntity(['name' => null, 'symbol' => null]);
+        self::assertSame($entityFive, $findOneWithNameNullAndSymbolNull);
+        
         $findAllWithNameNullAndSymbolZ = $map->findAllEntities(['name' => null, 'symbol' => 'z']);
         $this->checkCollectionsOfEntities([$entityThree, $entitySix], $findAllWithNameNullAndSymbolZ);
         

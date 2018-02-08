@@ -357,7 +357,7 @@ final class EntityMapWithStats implements EntityMap
         foreach ($this->indexByMultiOne as $index => $prop) {
             $value = $entity->get($prop);
             if ($value !== null) {
-                $this->multipleOne[$index][$this->keyMaker->makeKey($value)][] = $this->key;
+                $this->multipleOne[$index][$this->keyMaker->makeKey($value)][$this->key] = $this->key;
             } else {
                 $this->nullIndex[$prop][$this->key] = $this->key;
             }
@@ -366,21 +366,21 @@ final class EntityMapWithStats implements EntityMap
         foreach ($this->indexByMultiTwo as $index => $props) {
             $uKey = $this->makeKeyFromEntity($props);
             if ($uKey !== null) {
-                $this->multipleTwo[$index][$uKey][] = $this->key;
+                $this->multipleTwo[$index][$uKey][$this->key] = $this->key;
             }
         }
         
         foreach ($this->indexByMultiThree as $index => $props) {
             $uKey = $this->makeKeyFromEntity($props);
             if ($uKey !== null) {
-                $this->multipleThree[$index][$uKey][] = $this->key;
+                $this->multipleThree[$index][$uKey][$this->key] = $this->key;
             }
         }
         
         foreach ($this->indexByMultiFour as $index => $props) {
             $uKey = $this->makeKeyFromEntity($props);
             if ($uKey !== null) {
-                $this->multipleFour[$index][$uKey][] = $this->key;
+                $this->multipleFour[$index][$uKey][$this->key] = $this->key;
             }
         }
 
@@ -696,37 +696,50 @@ final class EntityMapWithStats implements EntityMap
         }
     
         if (empty($candidates)) {
+            $indexes = [];
+            
             foreach ($conditions as $index => $value) {
                 if ($value === null && !empty($this->nullIndex[$index])) {
-                    $candidates[] = $this->nullIndex[$index];
-                    unset($conditions[$index]);
+                    $indexes[] = $index;
                 }
             }
     
-            $isStrict = empty($conditions);
-        }
-        
-        if (empty($candidates)) {
-            foreach ($this->entities as $entity) {
-                if ($entity->satisfies($conditions)) {
-                    $this->stats->foundOneInCollection();
-                    return $entity;
+            if (empty($indexes)) {
+                foreach ($this->entities as $entity) {
+                    if ($entity->satisfies($conditions)) {
+                        $this->stats->foundOneInCollection();
+                        return $entity;
+                    }
                 }
+                
+                $this->stats->notFoundOneInCollection();
+                return null;
             }
             
-            $this->stats->notFoundOneInCollection();
-            return null;
-        }
-        
-        if (count($candidates) === 1) {
+            if (count($indexes) === 1) {
+                $winners = $this->nullIndex[$indexes[0]];
+                $isStrict = $cnt === 1;
+            } else {
+                $winners = array_intersect(...array_map(function ($index) {
+                    return $this->nullIndex[$index];
+                }, $indexes));
+    
+                if (empty($winners)) {
+                    $this->stats->noWinnersFromMultipleCandidatesInFindOne();
+                    return null;
+                }
+    
+                $isStrict = $cnt === count($indexes);
+            }
+            
+        } elseif (count($candidates) === 1) {
             $winners = $candidates[0];
         } else {
             $winners = array_intersect(...$candidates);
-        }
-        
-        if (empty($winners)) {
-            $this->stats->noWinnersFromMultipleCandidatesInFindOne();
-            return null;
+            if (empty($winners)) {
+                $this->stats->noWinnersFromMultipleCandidatesInFindOne();
+                return null;
+            }
         }
         
         if ($isStrict) {
@@ -1056,55 +1069,69 @@ final class EntityMapWithStats implements EntityMap
         }
     
         if (empty($candidates)) {
+            $indexes = [];
+        
             foreach ($conditions as $index => $value) {
                 if ($value === null && !empty($this->nullIndex[$index])) {
-                    $candidates[] = $this->nullIndex[$index];
-                    unset($conditions[$index]);
+                    $indexes[] = $index;
                 }
             }
-        
-            $isStrict = empty($conditions);
-        }
-        
-        if (empty($candidates)) {
-            $entities = [];
-            foreach ($this->entities as $entity) {
-                if ($entity->satisfies($conditions)) {
-                    $entities[] = $entity;
+    
+            if (empty($indexes)) {
+                $entities = [];
+                
+                foreach ($this->entities as $entity) {
+                    if ($entity->satisfies($conditions)) {
+                        $entities[] = $entity;
+                    }
                 }
+    
+                if (empty($entities)) {
+                    $this->stats->notFoundAnyInCollection();
+                    return [];
+                }
+    
+                $this->stats->foundSomeInCollection();
+                return $entities;
             }
-            
-            if (empty($entities)) {
-                $this->stats->notFoundAnyInCollection();
-                return [];
-            }
-            
-            $this->stats->foundSomeInCollection();
-            return $entities;
-        }
+    
+            if (count($indexes) === 1) {
+                $winners = $this->nullIndex[$indexes[0]];
+                $isStrict = $cnt === 1;
+            } else {
+                $winners = array_intersect(...array_map(function ($index) {
+                    return $this->nullIndex[$index];
+                }, $indexes));
         
-        if (count($candidates) === 1) {
+                if (empty($winners)) {
+                    $this->stats->noWinnersFromMultipleCandidatesInFindAll();
+                    return [];
+                }
+        
+                $isStrict = $cnt === count($indexes);
+            }
+            
+        } elseif (count($candidates) === 1) {
             $winners = $candidates[0];
         } else {
             $winners = array_intersect(...$candidates);
+            if (empty($winners)) {
+                $this->stats->noWinnersFromMultipleCandidatesInFindAll();
+                return [];
+            }
         }
         
-        if (empty($winners)) {
-            $this->stats->noWinnersFromMultipleCandidatesInFindAll();
-            return [];
-        }
+        $entities = [];
         
         if ($isStrict) {
-            $this->stats->winnerStrictFromMultipleCandidatesInFindAll();
-            $entities = [];
             foreach ($winners as $key) {
                 $entities[] = $this->entities[$key];
             }
             
+            $this->stats->winnerStrictFromMultipleCandidatesInFindAll();
             return $entities;
         }
         
-        $entities = [];
         foreach ($winners as $key) {
             $entity = $this->entities[$key];
             if ($entity->satisfies($conditions)) {
