@@ -5,7 +5,7 @@
     "keywords": ["storage", "entity", "repository", "entity map", "indexable entity"],
     "homepage": "https://github.com/fiiSoft/fiisoft-entity-indexer",
     "license": "MIT",
-    "version": "1.3.0",
+    "version": "2.0.0",
     "authors": [
         {
             "name": "FiiSoft",
@@ -21,7 +21,7 @@
     },
     "require": {
         "php": ">=5.6.0",
-        "fiisoft/entity-id": "^2.0.0",
+        "fiisoft/entity-id": "^2.1.0",
         "fiisoft/basics": "^2.0.0"
     }
 }

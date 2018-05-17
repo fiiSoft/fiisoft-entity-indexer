@@ -2,6 +2,8 @@
 
 namespace FiiSoft\EntityIndexer\Entity;
 
+use FiiSoft\Tools\Entity\Entity;
+
 interface IndexableEntity extends Entity
 {
     /**

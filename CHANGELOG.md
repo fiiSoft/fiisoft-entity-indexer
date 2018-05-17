@@ -2,6 +2,10 @@
 
 All important changes to `fiisoft-entity-indexer` will be documented in this file
 
+## 2.0.0
+
+Incompatible change - Entity and GenericEntity moved to another library and namespace.
+
 ## 1.3.0
 
 Changed way how multiple indexes store keys and significantly changed parts of code

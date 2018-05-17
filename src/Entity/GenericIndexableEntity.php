@@ -5,6 +5,7 @@ namespace FiiSoft\EntityIndexer\Entity;
 use DateTimeInterface;
 use FiiSoft\Tools\DateTime\Date;
 use FiiSoft\Tools\Id\Id;
+use FiiSoft\Tools\Entity\GenericEntity;
 
 class GenericIndexableEntity extends GenericEntity implements IndexableEntity
 {
